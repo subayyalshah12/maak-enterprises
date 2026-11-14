@@ -1,5 +1,7 @@
 import type { createClient } from './server';
 
+import 'server-only';
+
 type Row = Record<string, unknown>;
 type DemoResult = { data: Row[] | Row | null; error: null };
 type DemoQuery = PromiseLike<DemoResult> & {
@@ -69,8 +71,11 @@ const store: Record<string, Row[]> = {
   admin_users: [],
 };
 
-/** Volatile process-memory records. This adapter is never enabled in production. */
+/** Volatile process-memory records. This adapter is only available in local development. */
 export function createDemoClient(): SupabaseServerClient {
+  if (process.env.NODE_ENV !== 'development') {
+    throw new Error('The MAAK demo data adapter is only available in local development.');
+  }
   const demoClient: DemoClient = {
     from(table: string): DemoQuery {
       let operation: 'select' | 'insert' | 'update' | 'delete' = 'select';
