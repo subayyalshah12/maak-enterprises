@@ -1,0 +1,3 @@
+import { notFound } from 'next/navigation'; import { AdminShell } from '@/components/admin-shell'; import { requireAdmin } from '@/lib/supabase/auth'; import { PropertyEditor } from '@/components/property-editor'; import type { Property } from '@/lib/supabase/data';
+type Props={params:Promise<{id:string}>};
+export default async function EditProperty({params}:Props){const {id}=await params;const {supabase}=await requireAdmin();const {data}=await supabase.from('properties').select('*').eq('id',id).maybeSingle();if(!data)notFound();return <AdminShell title="Edit property"><PropertyEditor property={data as Property}/></AdminShell>}
