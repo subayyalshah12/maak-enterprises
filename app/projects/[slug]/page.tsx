@@ -1,4 +1,29 @@
-import type { Metadata } from 'next'; import { notFound } from 'next/navigation'; import Link from 'next/link'; import { SiteShell } from '@/components/site-shell'; import { getProject } from '@/lib/supabase/data'; import { InquiryForm } from '@/components/inquiry-form';
-type Props={params:Promise<{slug:string}>};
-export async function generateMetadata({params}:Props):Promise<Metadata>{const {slug}=await params;const p=await getProject(slug);return {title:p?.title??'Project detail'};}
-export default async function ProjectDetail({params}:Props){const {slug}=await params;const p=await getProject(slug);if(!p)notFound();return <SiteShell><section className="page-hero compact"><p className="eyebrow">PROJECT DETAIL / {p.division.toUpperCase()}</p><h1>{p.title}</h1><p className="hero-lede">{p.location} · {p.status}</p></section><section className="section detail-layout"><div><div className="detail-image-main project-detail-art">MAAK / APPROVED PROJECT PHOTOGRAPHY</div><h2>Project overview</h2><p className="muted">{p.description}</p><Link href="/projects" className="text-link">← Back to projects</Link></div><InquiryForm division={p.division==='construction'?'construction':'real-estate'} title="Enquire about this project"/></section></SiteShell>}
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { SiteShell } from '@/components/site-shell';
+import { ProjectDetailView } from '@/components/project-detail-view';
+import { getProject } from '@/lib/supabase/data';
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getProject(slug);
+  return { title: project?.title ?? 'Project detail' };
+}
+
+export default async function ProjectDetail({ params }: Props) {
+  const { slug } = await params;
+  const project = await getProject(slug);
+  if (!project) notFound();
+  return (
+    <SiteShell>
+      <section className="page-hero compact">
+        <p className="eyebrow">PROJECT DETAIL / {project.division.toUpperCase()}</p>
+        <h1>{project.title}</h1>
+        <p className="hero-lede">{project.location} · {project.status}</p>
+      </section>
+      <ProjectDetailView project={project} />
+    </SiteShell>
+  );
+}
