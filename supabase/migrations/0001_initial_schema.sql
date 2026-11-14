@@ -15,6 +15,13 @@ alter table public.admin_users enable row level security;
 alter table public.properties enable row level security;
 alter table public.construction_projects enable row level security;
 alter table public.inquiries enable row level security;
+
+-- Explicit SQL privileges complement RLS; policies alone do not grant table access.
+grant usage on schema public to anon, authenticated;
+grant select on public.properties, public.construction_projects to anon, authenticated;
+grant insert, update, delete on public.properties, public.construction_projects to authenticated;
+grant select on public.admin_users to authenticated;
+grant select, update on public.inquiries to authenticated;
 drop policy if exists "Admins can read admin membership" on public.admin_users;
 create policy "Admins can read admin membership" on public.admin_users for select to authenticated using(public.is_maak_admin());
 drop policy if exists "Public can read published properties" on public.properties;
