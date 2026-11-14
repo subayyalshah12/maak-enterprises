@@ -16,6 +16,18 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Capture npm security audit
+        if: always()
+        run: npm audit --json > npm-audit.json || true
+      - name: Upload dependency audit and generated lockfile
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dependency-audit-and-lockfile
+          path: |
+            package-lock.json
+            npm-audit.json
+          if-no-files-found: warn
       - name: Lint
         run: npm run lint
       - name: Typecheck
