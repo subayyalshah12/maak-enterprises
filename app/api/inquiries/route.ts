@@ -1,6 +1,8 @@
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
 import {createClient} from '@/lib/supabase/server';
+import {isDemoMode} from '@/lib/supabase/config';
+import {createDemoClient} from '@/lib/supabase/demo';
 
 const schema=z.object({
  name:z.string().trim().min(2).max(120),
@@ -27,7 +29,7 @@ export async function POST(req:Request){
  if(parsed.data.website)return NextResponse.json({ok:true},{status:201});
  const {website,...record}=parsed.data;
  void website;
- const supabase=await createClient();
+ const supabase=isDemoMode?createDemoClient():await createClient();
  if(!supabase)return NextResponse.json({error:'Enquiry service is not configured yet.'},{status:503});
  const {error}=await supabase.from('inquiries').insert(record);
  if(error){console.error('Inquiry insert failed',error.message);return NextResponse.json({error:'Could not save enquiry.'},{status:500});}
