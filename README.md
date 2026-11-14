@@ -10,7 +10,7 @@ Supabase is not required to work on the frontend.
 2. Copy `.env.example` to `.env.local`.
 3. Leave the Supabase URL and key blank until the company creates its Supabase project.
 4. Keep `MAAK_DEMO_MODE=true` for the local admin UI walkthrough.
-5. Run `npm install` and `npm run dev`.
+5. Run `npm ci` and `npm run dev`.
 
 The local demo mode is explicitly labelled, restricted to non-production `NODE_ENV`, and uses volatile in-memory records. Changes are not persistent and can disappear on process restart. It is not real authentication, must never be deployed, and never bypasses production authorization.
 
