@@ -29,7 +29,7 @@ async function removeDetachedMedia(
 ) {
   const retained = new Set(current);
   const paths = previous.filter((url) => !retained.has(url)).map(managedMediaPath).filter((path): path is string => Boolean(path));
-  if (paths.length === 0) return;
+  if (paths.length === 0 || !supabase.storage) return;
   const { error } = await supabase.storage.from('maak-public-media').remove(paths);
   if (error) console.error('Could not remove detached MAAK media:', error.message);
 }
