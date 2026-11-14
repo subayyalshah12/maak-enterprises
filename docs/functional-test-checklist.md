@@ -8,7 +8,7 @@ Use this checklist in the local Supabase-free demo first, then repeat backend-de
 - [ ] Confirm the admin login clearly labels local demo mode.
 - [ ] Enter the demo dashboard; confirm demo property, project and inquiry records are visibly marked.
 - [ ] Create/edit demo properties, projects and inquiry status; verify the UI updates in process memory.
-- [ ] Confirm demo changes are volatile and can reset after process restart.
+- [ ] Confirm demo changes persist across Next.js route requests and process restarts in the ignored local-only `.maak-demo-data.json` file; delete that file to reset fixtures.
 - [ ] Build and start production with `MAAK_DEMO_MODE=true`; confirm the demo entry point is absent and unauthenticated `/admin` redirects to login/setup.
 - [ ] Confirm public routes do not expose demo records as genuine listings, projects or enquiries.
 
