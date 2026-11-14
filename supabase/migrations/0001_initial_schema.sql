@@ -25,8 +25,14 @@ drop policy if exists "Public can read published projects" on public.constructio
 create policy "Public can read published projects" on public.construction_projects for select to anon,authenticated using(is_published=true);
 drop policy if exists "Admins manage projects" on public.construction_projects;
 create policy "Admins manage projects" on public.construction_projects for all to authenticated using(public.is_maak_admin()) with check(public.is_maak_admin());
+-- Public visitors may submit enquiry contact fields only. They cannot set staff-only
+-- status, internal notes, follow-up timestamps, IDs or creation timestamps.
+revoke insert on public.inquiries from anon, authenticated;
+grant insert (name,email,phone,division,property_id,message,consent,source)
+  on public.inquiries to anon, authenticated;
 drop policy if exists "Visitors submit consented inquiries" on public.inquiries;
-create policy "Visitors submit consented inquiries" on public.inquiries for insert to anon,authenticated with check(consent=true);
+create policy "Visitors submit consented inquiries" on public.inquiries
+  for insert to anon,authenticated with check(consent=true and status='new' and internal_notes is null and follow_up_at is null);
 drop policy if exists "Admins read inquiries" on public.inquiries;
 create policy "Admins read inquiries" on public.inquiries for select to authenticated using(public.is_maak_admin());
 drop policy if exists "Admins update inquiries" on public.inquiries;
