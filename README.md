@@ -33,7 +33,7 @@ Never put a service-role/secret key in a `NEXT_PUBLIC_` variable or browser code
 - Public and admin UI can be developed locally without a Supabase account.
 - Demo records are illustrative only, volatile and not persisted.
 - Supabase database, authentication, email delivery and storage are not live or verified until a real project is configured and tested.
-- Property/project image fields currently accept URLs. An authenticated file-upload interface and live Storage tests remain outstanding.
+- Property/project editors include a prepared authenticated Supabase Storage uploader with MIME and 10 MB size checks. It stays disabled until Supabase environment variables are configured; real upload and RLS behavior remain untested until a project exists.
 - Division-specific WhatsApp routing must use company-approved destination numbers; no recipients are invented.
 - No sample listing, fake testimonial, certification, company history or project claim is seeded.
 
