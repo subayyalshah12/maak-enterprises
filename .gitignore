@@ -5,3 +5,6 @@ out
 !.env.example
 .wrangler
 .dev.vars
+
+# Local-only MAAK demo records (never commit)
+.maak-demo-data.json
