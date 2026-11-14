@@ -1,0 +1,88 @@
+name: Quality checks
+on:
+  push:
+    branches: [main, "chore/**"]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: Enforce dependency security audit
+        run: npm audit --audit-level=moderate
+      - name: Capture npm security audit
+        if: always()
+        run: npm audit --json > npm-audit.json || true
+      - name: Upload dependency audit and generated lockfile
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dependency-audit-and-lockfile
+          path: |
+            package-lock.json
+            npm-audit.json
+          if-no-files-found: warn
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
+      - name: Verify production cannot enter demo mode
+        run: |
+          MAAK_DEMO_MODE=true node node_modules/next/dist/bin/next start --hostname 127.0.0.1 > /tmp/maak-production.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:3000/admin/login > /tmp/maak-production-login.html; then
+              break
+            fi
+            sleep 2
+          done
+          if grep -q "Enter local demo dashboard" /tmp/maak-production-login.html; then
+            echo "ERROR: production exposed the local demo entry point"
+            exit 1
+          fi
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/admin)
+          if [ "$status" != "307" ] && [ "$status" != "308" ]; then
+            echo "ERROR: expected unauthenticated production admin redirect, received HTTP $status"
+            exit 1
+          fi
+          echo "Production guard passed: demo entry is hidden and /admin redirects without Supabase."
+          kill "$server_pid" 2>/dev/null || true
+          trap - EXIT
+      - name: Verify Supabase-free local demo
+        run: |
+          MAAK_DEMO_MODE=true node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 > /tmp/maak-development.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:3000/admin/login > /tmp/maak-demo-login.html; then
+              break
+            fi
+            sleep 2
+          done
+          grep -q "Enter local demo dashboard" /tmp/maak-demo-login.html
+          curl --silent --fail http://127.0.0.1:3000/admin/properties > /tmp/maak-demo-properties.html
+          curl --silent --fail http://127.0.0.1:3000/admin/projects > /tmp/maak-demo-projects.html
+          curl --silent --fail http://127.0.0.1:3000/admin/inquiries > /tmp/maak-demo-inquiries.html
+          grep -q "DEMO ONLY" /tmp/maak-demo-properties.html
+          grep -q "DEMO ONLY" /tmp/maak-demo-projects.html
+          grep -q "DEMO CUSTOMER" /tmp/maak-demo-inquiries.html
+          curl --silent --show-error --fail --output /tmp/maak-demo-inquiry-response.json \
+            --request POST http://localhost:3000/api/inquiries \
+            --header 'Origin: http://localhost:3000' \
+            --header 'Content-Type: application/json' \
+            --data '{"name":"CI Demo Submitter","email":"ci@example.invalid","phone":"0000000000","division":"general","message":"CI-only local demo enquiry","consent":true,"source":"website","website":""}'
+          grep -q '"ok":true' /tmp/maak-demo-inquiry-response.json
+          curl --silent --fail http://127.0.0.1:3000/admin/inquiries > /tmp/maak-demo-inquiries-after.html
+          grep -q "CI Demo Submitter" /tmp/maak-demo-inquiries-after.html
+          echo "Local demo passed: admin login, CRUD pages and inquiry form submission work without Supabase credentials."
