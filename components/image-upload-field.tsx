@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -90,7 +91,7 @@ export function ImageUploadField({
           {urls.map((url) => (
             <div className="image-upload-preview" key={url}>
               {/* External URLs are supplied by the authorised admin. */}
-              <img src={url} alt="Property or project upload preview" />
+              <Image src={url} alt="Property or project upload preview" width={132} height={82} unoptimized />
               <button type="button" onClick={() => removeImage(url)} disabled={busy}>Remove image</button>
             </div>
           ))}
