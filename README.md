@@ -1,77 +1,45 @@
-# MAAK Enterprises Company — Corporate Website
+# MAAK Enterprises — Corporate Website
 
-A responsive Next.js App Router website and private admin portal based on the approved MAAK Figma design. Brand colors: navy `#172B55`, gold `#D6A642`, sky blue `#AFC7E7`, white and charcoal.
+Next.js App Router frontend and admin portal based on the approved MAAK Figma design.
 
-## Included
+## Local development without Supabase
 
-- Public pages: Home, About, Real Estate, Property Detail, Construction, Educational Consultancy, Projects, Project Detail and Contact.
-- Private admin: login, dashboard, property CRUD/status actions, construction project CRUD, inquiry list/detail/status/notes/follow-up, password reset and settings overview.
-- Supabase SSR authentication using cookie-based sessions.
-- Supabase SQL migration with Row Level Security policies for properties, projects, enquiries, admin membership and media storage.
-- Public listings remain empty until an administrator adds and publishes verified records. No sample listings, fake testimonials, statistics, certifications or project claims are seeded.
-- Official MAAK logo supplied by the company is in `public/maak-logo.png`.
-
-## Local setup
+Supabase is not required to work on the frontend.
 
 1. Install Node.js 22 or newer.
-2. Create a Supabase project and open its SQL Editor.
-3. Run `supabase/migrations/0001_initial_schema.sql` once.
-4. In Supabase Authentication, create the first staff user with the approved administrator email. Disable public sign-up after creating the staff account.
-5. Copy the new user's UUID from Authentication → Users, then run this SQL in the Supabase SQL Editor (replace the UUID):
+2. Copy `.env.example` to `.env.local`.
+3. Leave the Supabase URL and key blank until the company creates its Supabase project.
+4. Keep `MAAK_DEMO_MODE=true` for the local admin UI walkthrough.
+5. Run `npm install` and `npm run dev`.
 
-   ```sql
-   insert into public.admin_users (user_id)
-   values ('00000000-0000-0000-0000-000000000000');
-   ```
+The local demo mode is explicitly labelled, restricted to non-production `NODE_ENV`, and uses volatile in-memory records. Changes are not persistent and can disappear on process restart. It is not real authentication, must never be deployed, and never bypasses production authorization.
 
-6. Copy `.env.example` to `.env.local` and fill:
+Public property and project pages remain empty until genuine, approved company records are connected. Demo records are clearly marked and must not be represented as actual inventory, projects, customers or enquiries.
 
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_PUBLISHABLE_OR_ANON_KEY
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   ```
+## Future Supabase integration
 
-7. Run:
+The repository contains SSR/browser client scaffolding and `supabase/migrations/0001_initial_schema.sql`. Once the company creates a project:
 
-   ```bash
-   npm install
-   npm run dev
-   ```
+1. Apply the SQL migration in Supabase SQL Editor.
+2. Create the first approved staff user in Supabase Auth.
+3. Manually insert that user's UUID into `public.admin_users` as documented in the migration.
+4. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to local `.env.local` and deployment environment settings.
+5. Test RLS, admin authorization, enquiry writes, CRUD and storage against that real project before launch.
 
-8. Open `http://localhost:3000`. Admin sign-in is at `/admin/login`.
+Never put a service-role/secret key in a `NEXT_PUBLIC_` variable or browser code.
 
-## Security notes
+## Current implementation boundaries
 
-- Never place a Supabase service-role/secret key in a `NEXT_PUBLIC_` variable or browser code. This project does not need a service-role key.
-- Public visitors can submit consented enquiries only. They cannot read enquiries or change their status/notes.
-- Only user IDs explicitly inserted into `public.admin_users` can access the staff portal or write properties/projects/upload media.
-- Sold and archived properties remain in the admin database but are not returned by the public listing query.
-- Only publish a property after owner/agent authority, accuracy, media rights and commission terms have been checked.
-- The first migration creates a public-read media bucket with admin-only writes. Do not upload identity documents or private customer records there.
+- Public and admin UI can be developed locally without a Supabase account.
+- Demo records are illustrative only, volatile and not persisted.
+- Supabase database, authentication, email delivery and storage are not live or verified until a real project is configured and tested.
+- Property/project image fields currently accept URLs. An authenticated file-upload interface and live Storage tests remain outstanding.
+- Division-specific WhatsApp routing must use company-approved destination numbers; no recipients are invented.
+- No sample listing, fake testimonial, certification, company history or project claim is seeded.
 
-## Cloudflare deployment
+## Company content required before launch
 
-Cloudflare's current Next.js guide recommends **vinext** as the default Workers path for new Next.js apps, while noting that vinext is beta. Keep the standard Next.js development workflow until the compatibility check is clean:
-
-```bash
-npx vinext check
-npx vinext init
-npm run dev:vinext
-npm run build:vinext
-npx @vinext/cloudflare deploy
-```
-
-`vinext init` generates the Vite and Cloudflare Workers configuration and scripts for the project. Review its generated `wrangler.jsonc` and the compatibility report before production deployment. Set the Supabase URL and publishable/anon key as Worker environment variables; set `NEXT_PUBLIC_SITE_URL` to the production domain. Use Cloudflare's secret/environment-variable settings, not committed files.
-
-Official guidance: https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/
-
-## Content still needed before public launch
-
-- Company-approved About copy (mission, vision, values and any history the company wishes to publish).
-- Approved service descriptions for Construction and Educational Consultancy.
-- Verified property listings with owner/agent authorisation, prices and property photography.
-- Verified construction project names, status, descriptions and image rights.
-- Confirmed office phone/WhatsApp numbers and social links, if they should be shown publicly.
-
-All unavailable facts remain omitted or clearly marked as placeholders. The site does not invent company history, property inventory, projects, certifications, achievements or testimonials.
+- Approved About copy, service descriptions and business claims.
+- Verified property listings, authority to market, prices and media rights.
+- Verified project names, statuses, descriptions and image rights.
+- Approved WhatsApp/contact routing and public contact details.
