@@ -24,7 +24,7 @@ jobs:
         run: npm run build
       - name: Verify production cannot enter demo mode
         run: |
-          MAAK_DEMO_MODE=true npm run start -- --hostname 127.0.0.1 > /tmp/maak-production.log 2>&1 &
+          MAAK_DEMO_MODE=true node node_modules/next/dist/bin/next start --hostname 127.0.0.1 > /tmp/maak-production.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 45); do
@@ -47,7 +47,7 @@ jobs:
           trap - EXIT
       - name: Verify Supabase-free local demo
         run: |
-          MAAK_DEMO_MODE=true npm run dev -- --hostname 127.0.0.1 > /tmp/maak-development.log 2>&1 &
+          MAAK_DEMO_MODE=true node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 > /tmp/maak-development.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 60); do
