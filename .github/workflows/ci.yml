@@ -4,15 +4,63 @@ on:
     branches: [main, "chore/**"]
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: npm install
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Install dependencies
+        run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
+      - name: Verify production cannot enter demo mode
+        run: |
+          MAAK_DEMO_MODE=true npm run start -- --hostname 127.0.0.1 > /tmp/maak-production.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:3000/admin/login > /tmp/maak-production-login.html; then
+              break
+            fi
+            sleep 2
+          done
+          if grep -q "Enter local demo dashboard" /tmp/maak-production-login.html; then
+            echo "ERROR: production exposed the local demo entry point"
+            exit 1
+          fi
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/admin)
+          if [ "$status" != "307" ] && [ "$status" != "308" ]; then
+            echo "ERROR: expected unauthenticated production admin redirect, received HTTP $status"
+            exit 1
+          fi
+          echo "Production guard passed: demo entry is hidden and /admin redirects without Supabase."
+          kill "$server_pid" 2>/dev/null || true
+          trap - EXIT
+      - name: Verify Supabase-free local demo
+        run: |
+          MAAK_DEMO_MODE=true npm run dev -- --hostname 127.0.0.1 > /tmp/maak-development.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:3000/admin/login > /tmp/maak-demo-login.html; then
+              break
+            fi
+            sleep 2
+          done
+          grep -q "Enter local demo dashboard" /tmp/maak-demo-login.html
+          curl --silent --fail http://127.0.0.1:3000/admin/properties > /tmp/maak-demo-properties.html
+          curl --silent --fail http://127.0.0.1:3000/admin/projects > /tmp/maak-demo-projects.html
+          curl --silent --fail http://127.0.0.1:3000/admin/inquiries > /tmp/maak-demo-inquiries.html
+          grep -q "DEMO ONLY" /tmp/maak-demo-properties.html
+          grep -q "DEMO ONLY" /tmp/maak-demo-projects.html
+          grep -q "DEMO CUSTOMER" /tmp/maak-demo-inquiries.html
+          echo "Local demo passed: admin login, properties, projects and inquiries render without Supabase credentials."
