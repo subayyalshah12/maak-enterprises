@@ -1,4 +1,28 @@
-import type { Metadata } from 'next'; import { SiteShell } from '@/components/site-shell'; import { PropertyGrid } from '@/components/property-grid'; import { getPublishedProperties } from '@/lib/supabase/data'; import Link from 'next/link';
-export const metadata:Metadata={title:'Real Estate'};
-export default async function RealEstate(){const properties=await getPublishedProperties();return <SiteShell><section className="page-hero compact"><p className="eyebrow">REAL ESTATE</p><h1>Find a place to move forward.</h1><p className="hero-lede">Browse currently published properties or send us your requirements.</p></section><section className="section"><div className="listing-toolbar"><div><p className="eyebrow">PROPERTY LISTINGS</p><h2>Available opportunities</h2></div><Link href="/contact" className="button button-outline">Share your requirements</Link></div>{properties.length?<PropertyGrid properties={properties}/>:<div className="empty-state"><span className="empty-icon">01</span><h3>No properties published yet</h3><p>Our team is preparing verified property information. Contact us with your preferred area, property type and budget.</p><Link href="/contact" className="button">Send a property enquiry <ArrowRightIcon/></Link></div>}</section></SiteShell>}
-function ArrowRightIcon(){return <span aria-hidden="true">→</span>}
+import type { Metadata } from 'next';
+import { SiteShell } from '@/components/site-shell';
+import { RealEstateSearch } from '@/components/real-estate-search';
+import { getPublishedProperties } from '@/lib/supabase/data';
+
+export const metadata: Metadata = { title: 'Real Estate' };
+
+export default async function RealEstate() {
+  const properties = await getPublishedProperties();
+  return (
+    <SiteShell>
+      <section className="page-hero compact">
+        <p className="eyebrow">REAL ESTATE</p>
+        <h1>Find a place to move forward.</h1>
+        <p className="hero-lede">Explore available opportunities. Only verified and published property information is shown.</p>
+      </section>
+      <section className="section">
+        <div className="listing-toolbar">
+          <div>
+            <p className="eyebrow">PROPERTY LISTINGS</p>
+            <h2>Available opportunities</h2>
+          </div>
+        </div>
+        <RealEstateSearch properties={properties} />
+      </section>
+    </SiteShell>
+  );
+}
