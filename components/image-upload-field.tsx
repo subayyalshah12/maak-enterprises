@@ -6,7 +6,7 @@ import {isSupabaseConfigured} from '@/lib/supabase/config';
 const allowed = ['image/jpeg','image/png','image/webp','image/avif'];
 const maxBytes = 10 * 1024 * 1024;
 
-export function ImageUploadField({name,initialUrls=[]}:{name:string;initialUrls?:string[]}){
+export function ImageUploadField({name,initialUrls=[],folder='property-media'}:{name:string;initialUrls?:string[];folder?:string}){
  const [urls,setUrls]=useState(initialUrls.join('\n'));
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
@@ -22,7 +22,7 @@ export function ImageUploadField({name,initialUrls=[]}:{name:string;initialUrls?
     if(!allowed.includes(file.type))throw new Error('Use JPG, PNG, WebP or AVIF images only.');
     if(file.size>maxBytes)throw new Error('Each image must be 10 MB or smaller.');
     const safeName=file.name.toLowerCase().replace(/[^a-z0-9.-]+/g,'-').slice(-100);
-    const path=`property-media/${crypto.randomUUID()}-${safeName}`;
+    const path=`${folder}/${crypto.randomUUID()}-${safeName}`;
     const {error}=await supabase.storage.from('maak-public-media').upload(path,file,{contentType:file.type,upsert:false});
     if(error)throw new Error(error.message);
     uploaded.push(supabase.storage.from('maak-public-media').getPublicUrl(path).data.publicUrl);
