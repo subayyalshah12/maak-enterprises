@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
 permissions:
-  contents: read
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -14,8 +14,20 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Install dependencies
-        run: npm install
+      - name: Generate and commit deterministic lockfile
+        run: |
+          npm install --package-lock-only
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add reproducible npm lockfile"
+            git push origin "HEAD:${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          fi
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: Enforce dependency security audit
+        run: npm audit --audit-level=moderate
       - name: Capture npm security audit
         if: always()
         run: npm audit --json > npm-audit.json || true
