@@ -1,6 +1,8 @@
 import type { createClient } from './server';
 
 import 'server-only';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 type Row = Record<string, unknown>;
 type DemoResult = { data: Row[] | Row | null; error: null };
@@ -19,7 +21,7 @@ type DemoClient = { from(table: string): DemoQuery };
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
 const now = new Date().toISOString();
-const store: Record<string, Row[]> = {
+const seedStore: Record<string, Row[]> = {
   properties: [{
     id: '10000000-0000-4000-8000-000000000001',
     title: 'DEMO ONLY — Sample property (not real inventory)',
@@ -71,7 +73,27 @@ const store: Record<string, Row[]> = {
   admin_users: [],
 };
 
-/** Volatile process-memory records. This adapter is only available in local development. */
+const demoDataPath = join(process.cwd(), '.maak-demo-data.json');
+
+function readDemoStore(): Record<string, Row[]> {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(demoDataPath, 'utf8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, Row[]>;
+    }
+  } catch {
+    // First local demo run: initialise a clearly labelled fixture dataset.
+  }
+  const initial = structuredClone(seedStore);
+  writeFileSync(demoDataPath, JSON.stringify(initial, null, 2), { encoding: 'utf8', mode: 0o600 });
+  return initial;
+}
+
+function writeDemoStore(store: Record<string, Row[]>): void {
+  writeFileSync(demoDataPath, JSON.stringify(store, null, 2), { encoding: 'utf8', mode: 0o600 });
+}
+
+/** Local file-backed demo records, excluded from Git and available only in development. */
 export function createDemoClient(): SupabaseServerClient {
   if (process.env.NODE_ENV !== 'development') {
     throw new Error('The MAAK demo data adapter is only available in local development.');
@@ -86,6 +108,7 @@ export function createDemoClient(): SupabaseServerClient {
       let single = false;
 
       const execute = async (): Promise<DemoResult> => {
+        const store = readDemoStore();
         const rows = store[table] ?? (store[table] = []);
         if (operation === 'insert') {
           const inserted = values.map((value) => ({
@@ -95,16 +118,19 @@ export function createDemoClient(): SupabaseServerClient {
             ...value,
           }));
           rows.push(...inserted);
+          writeDemoStore(store);
           return { data: inserted, error: null };
         }
 
         const selected = rows.filter((row) => filters.every((filter) => filter(row)));
         if (operation === 'update') {
           selected.forEach((row) => Object.assign(row, values[0], { updated_at: new Date().toISOString() }));
+          writeDemoStore(store);
           return { data: selected, error: null };
         }
         if (operation === 'delete') {
           store[table] = rows.filter((row) => !filters.every((filter) => filter(row)));
+          writeDemoStore(store);
           return { data: selected, error: null };
         }
 
