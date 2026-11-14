@@ -78,8 +78,8 @@ jobs:
           grep -q "DEMO ONLY" /tmp/maak-demo-projects.html
           grep -q "DEMO CUSTOMER" /tmp/maak-demo-inquiries.html
           curl --silent --show-error --fail --output /tmp/maak-demo-inquiry-response.json \
-            --request POST http://127.0.0.1:3000/api/inquiries \
-            --header 'Origin: http://127.0.0.1:3000' \
+            --request POST http://localhost:3000/api/inquiries \
+            --header 'Origin: http://localhost:3000' \
             --header 'Content-Type: application/json' \
             --data '{"name":"CI Demo Submitter","email":"ci@example.invalid","phone":"0000000000","division":"general","message":"CI-only local demo enquiry","consent":true,"source":"website","website":""}'
           grep -q '"ok":true' /tmp/maak-demo-inquiry-response.json
