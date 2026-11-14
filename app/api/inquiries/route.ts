@@ -18,7 +18,11 @@ const schema=z.object({
 
 export async function POST(req:Request){
  const origin=req.headers.get('origin');
- if(!origin||origin!==new URL(req.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
+ const requestUrl=new URL(req.url);
+ const requestHost=req.headers.get('x-forwarded-host')??req.headers.get('host');
+ const requestProtocol=req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim()??requestUrl.protocol.slice(0,-1);
+ const expectedOrigin=requestHost?`${requestProtocol}://${requestHost}`:requestUrl.origin;
+ if(!origin||origin!==expectedOrigin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
  if(!req.headers.get('content-type')?.toLowerCase().includes('application/json'))return NextResponse.json({error:'Expected a JSON request.'},{status:415});
  const raw=await req.text();
  if(new TextEncoder().encode(raw).byteLength>12000)return NextResponse.json({error:'Request is too large.'},{status:413});
