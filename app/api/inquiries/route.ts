@@ -10,7 +10,7 @@ const schema=z.object({
  property_id:z.string().uuid().nullable().optional(),
  message:z.string().trim().min(3).max(5000),
  consent:z.literal(true),
- source:z.string().max(60).default('website'),
+ source:z.literal('website').default('website'),
  website:z.string().max(200).optional()
 });
 
